@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -19,7 +20,8 @@
         }
 
         body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-weight: 700;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -79,7 +81,8 @@
             border: 2px solid rgba(255, 255, 255, 0.2);
             border-radius: 0.5rem;
             color: white;
-            font-size: 1rem;
+            font-size: 1.5rem;
+            font-weight: bold;
             width: 100%;
             transition: all 0.3s ease;
         }
@@ -102,6 +105,8 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
             width: fit-content;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-weight: bold;
         }
 
         button:hover {
@@ -198,6 +203,61 @@
             margin-top: 1rem;
         }
 
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: var(--background);
+            padding: 2rem;
+            border-radius: 1rem;
+            text-align: center;
+            border: 2px solid var(--secondary);
+            box-shadow: 0 0 30px rgba(0, 159, 253, 0.3);
+            max-width: 90%;
+        }
+
+        .modal-content h2 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(45deg, #00ff88, #009ffd);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .Match-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+            margin: 1rem 0;
+        }
+
+        #targetScore {
+            max-width: 150px;
+            padding: 5px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 0.5rem;
+            color: white;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            font-size: 20px;
+        }
+
         @media (min-width: 768px) {
             .game-container {
                 padding: 2rem;
@@ -222,24 +282,40 @@
         }
     </style>
 </head>
+
 <body>
+    <!-- Modal for Match win -->
+    <div id="congratsModal" class="modal">
+        <div class="modal-content">
+            <h2>🎉 Congratulations, <span id="MatchWinner"></span>! 🎉</h2>
+            <p>You won the Match!</p>
+            <button class="computer-btn" id="newMatch">New Match</button>
+        </div>
+    </div>
+
     <div class="game-container">
         <div class="left-column">
             <div class="game-header">
                 <h1>⚡ Neon Tic Tac Toe ⚡</h1>
             </div>
-            
+
             <div class="controls">
+                <!-- Match controls -->
+                <div class="Match-controls">
+                    <input type="number" id="targetScore" placeholder="Set Target" min="1">
+                    <button class="primary-btn" id="startMatch">Start Match</button>
+                </div>
+
                 <div class="mode-selector">
                     <button class="primary-btn" id="humanVsHuman">PvP</button>
                     <button class="computer-btn" id="humanVsComputer">vs AI</button>
                 </div>
-                
+
                 <div class="player-input">
                     <input type="text" id="playerX" placeholder="Player X" value="Player X">
                     <input type="text" id="playerO" placeholder="Player O" value="Player O">
                 </div>
-                
+
                 <div class="score-board">
                     <div class="score-item">
                         <h3 id="scoreXName">Player X</h3>
@@ -250,7 +326,7 @@
                         <p id="scoreO">0</p>
                     </div>
                 </div>
-                
+
                 <div class="New-reset">
                     <button class="primary-btn" id="restartButton">New Game</button>
                     <button class="danger-btn" id="resetScore">Reset Score</button>
@@ -288,6 +364,11 @@
         const scoreOName = document.getElementById("scoreOName");
         const humanVsHumanBtn = document.getElementById("humanVsHuman");
         const humanVsComputerBtn = document.getElementById("humanVsComputer");
+        const targetScoreInput = document.getElementById("targetScore");
+        const startMatchButton = document.getElementById("startMatch");
+        const congratsModal = document.getElementById("congratsModal");
+        const MatchWinnerSpan = document.getElementById("MatchWinner");
+        const newMatchButton = document.getElementById("newMatch");
 
         const winningCombinations = [
             [0, 1, 2], [3, 4, 5], [6, 7, 8],
@@ -302,7 +383,8 @@
         let vsComputer = false;
         let aiDifficulty = 0.7;
         let startingPlayer = "X";
-        let lastWinner = null;
+        let MatchMode = false;
+        let targetScore = 0;
 
         function minimax(gameState, depth, isMaximizing) {
             const winner = checkGameOver();
@@ -364,7 +446,7 @@
             currentPlayer = startingPlayer;
             gameActive = true;
             updateStatus();
-            
+
             if (vsComputer && currentPlayer === "O") {
                 setTimeout(() => computerMove(), 500);
             }
@@ -383,13 +465,13 @@
 
         function updateStatus() {
             if (vsComputer) {
-                status.textContent = gameActive 
-                    ? `${currentPlayer === "X" ? playerXInput.value || "Your" : "AI"} Turn`
+                status.textContent = gameActive
+                    ? `${currentPlayer === "X" ? playerXInput.value || "Your" : "AI"} Turn!`
                     : "Game Over";
             } else {
                 const xName = playerXInput.value || "Player X";
                 const oName = playerOInput.value || "Player O";
-                status.textContent = `${currentPlayer === "X" ? xName : oName}'s Turn`;
+                status.textContent = `${currentPlayer === "X" ? xName : oName}'s Turn!`;
             }
         }
 
@@ -433,21 +515,24 @@
 
         function handleWin(winner) {
             scores[winner]++;
-            startingPlayer = winner;
             updateScores();
-            if (vsComputer) {
-                status.textContent = `${winner === "X" 
-                    ? playerXInput.value || "Player" 
-                    : "Neon AI"} wins!`;
+
+            // Update AI difficulty based on score difference
+            const scoreDiff = scores.X - scores.O;
+            aiDifficulty = Math.min(0.7 + (Math.abs(scoreDiff) * 0.03), 0.95);
+
+            // Check Match win
+            if (MatchMode && (scores.X >= targetScore || scores.O >= targetScore)) {
+                endMatch(winner);
             } else {
-                const winnerName = winner === "X" 
-                    ? playerXInput.value || "Player X" 
-                    : playerOInput.value || "Player O";
-                status.textContent = `${winnerName} wins!`;
+                startingPlayer = winner;
+                status.textContent = vsComputer
+                    ? `${winner === "X" ? playerXInput.value || "Player" : "Neon AI"} wins!`
+                    : `${winner === "X" ? playerXInput.value : playerOInput.value} wins!`;
+                highlightWinningCombination();
+                gameActive = false;
+                setTimeout(initGame, 1500);
             }
-            highlightWinningCombination();
-            gameActive = false;
-            setTimeout(initGame, 1500);
         }
 
         function checkDraw() {
@@ -474,7 +559,35 @@
         function resetScores() {
             scores = { X: 0, O: 0 };
             startingPlayer = "X";
+            MatchMode = false;
             updateScores();
+            startMatchButton.disabled = false;
+            targetScoreInput.disabled = false;
+            congratsModal.style.display = "none";
+        }
+
+        function startMatch() {
+            const target = parseInt(targetScoreInput.value);
+            if (target > 0) {
+                targetScore = target;
+                MatchMode = true;
+                scores = { X: 0, O: 0 };
+                updateScores();
+                startMatchButton.disabled = true;
+                targetScoreInput.disabled = true;
+                initGame();
+            }
+        }
+
+        function endMatch(winner) {
+            MatchMode = false;
+            congratsModal.style.display = "flex";
+            const winnerName = winner === "X"
+                ? playerXInput.value || "Player X"
+                : (vsComputer ? "Neon AI" : playerOInput.value);
+            MatchWinnerSpan.textContent = winnerName;
+            startMatchButton.disabled = false;
+            targetScoreInput.disabled = false;
         }
 
         // Event Listeners
@@ -486,19 +599,23 @@
         resetScoreButton.addEventListener("click", resetScores);
         playerXInput.addEventListener("input", updateNames);
         playerOInput.addEventListener("input", updateNames);
-        
         humanVsHumanBtn.addEventListener("click", () => {
             vsComputer = false;
             startingPlayer = "X";
             updateNames();
             initGame();
         });
-
         humanVsComputerBtn.addEventListener("click", () => {
             vsComputer = true;
             startingPlayer = "X";
             updateNames();
             initGame();
+        });
+        startMatchButton.addEventListener("click", startMatch);
+        newMatchButton.addEventListener("click", () => {
+            congratsModal.style.display = "none";
+            scores = { X: 0, O: 0 };
+            updateScores();
         });
 
         // Initialize
@@ -506,4 +623,5 @@
         initGame();
     </script>
 </body>
+
 </html>
